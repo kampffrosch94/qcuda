@@ -35,21 +35,35 @@ int main(int argc, char ** argv){
     
     while(currentrow < fieldlength){
         rows[currentrow]++;
-        if(rows[currentrow] >= fieldlength){
+        if(rows[currentrow] >= fieldlength){//backtracking
             rows[currentrow] = -1;
             currentrow--;
+            while((currentrow >= 0) && //multistepbacktracking
+                    (rows[currentrow] >= fieldlength - 1)){
+                rows[currentrow] = -1;
+                currentrow--;
+                printf("Multi");
+            }
+
+            printf("Track back\n");
             if(currentrow < 0){
                 printf("\nNo solution found.\n");
                 return 0;
             }
         }
-        if(checkfield(rows,fieldlength)){
+        else if(checkfield(rows,fieldlength)){
             currentrow++;
         }   
     }
 
     printf("Result:\n\n");
     for(int i = 0; i<fieldlength;i++){
-        printf("%d",(int)rows[i]);
+        for(int e = 0; e<fieldlength;e++){
+            if(e == rows[i])
+                printf("X");
+            else
+                printf("O");
+        }
+        printf("\n");
     }
 }
