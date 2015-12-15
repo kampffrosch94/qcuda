@@ -9,6 +9,9 @@ int checkfield(char * rows, int fieldlength){
     for(int i = 0; i<fieldlength-1;i++){
         int e = i + 1;
         while(e < fieldlength){
+            if(rows[e] == -1){ //row not yet set
+                break; 
+            }
             if(rows[i] == rows[e]){ //same column
                 return 0;
             }
