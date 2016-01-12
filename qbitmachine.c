@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdlib.h>
 
+#define VERBOSE 0
 
 const char *byte_to_binary(int x)
 {
@@ -37,7 +39,11 @@ void print_field(int8_t * cols, int32_t N){
 
 
 int main(int argc, char ** argv){
-    int32_t N = 4;
+    if(argc < 2){
+        printf("Not enough arguments\n");
+        return 1;
+    }
+    int32_t N = atoi(argv[1]);
 
     int8_t * cols = calloc(N,sizeof(int8_t));
         //the field on which the queens are set, split in columns
@@ -102,9 +108,11 @@ int main(int argc, char ** argv){
             
             if(cc == N - 1){
                 found_combinations++;
+#if (VERBOSE > 0)
                 print_field(cols,N);
                 //printf("Free_vector: %s\n",byte_to_binary(free_vector));
                 printf("bd: %s\n",byte_to_binary(bd));
+#endif
             } else {
                 cc++;
             }
