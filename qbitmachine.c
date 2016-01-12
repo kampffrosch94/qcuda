@@ -68,7 +68,7 @@ int main(int argc, char ** argv){
             //delete the old placement in the blockvectors (if any)
             tbh = 1 << cols[cc];
             tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << ((N -1 - cols[cc]) +N-1 - cc);
+            tbd = 1 << ((N - 1 - cols[cc]) + cc);
             
             bh -= tbh;
             bu -= tbu;
@@ -94,7 +94,7 @@ int main(int argc, char ** argv){
             //set the new placement in the blockvectors
             tbh = 1 << cols[cc];
             tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << ((N -1 - cols[cc]) +N-1 - cc);
+            tbd = 1 << ((N - 1 - cols[cc]) + cc);
 
             bh += tbh;
             bu += tbu;
