@@ -68,7 +68,7 @@ int main(int argc, char ** argv){
             //delete the old placement in the blockvectors (if any)
             tbh = 1 << cols[cc];
             tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << ((N - 1 - cols[cc]) + cc);
+            tbd = 1 << (cols[cc] + N - 1 - cc);
             
             bh -= tbh;
             bu -= tbu;
@@ -78,7 +78,7 @@ int main(int argc, char ** argv){
         cols[cc]++;
 
         //find the next new placement in the current col
-        free_vector = ~(bh | (bu >> cc) | (bd << cc));
+        free_vector = ~(bh | (bu >> cc) | (bd >> (N -1 - cc)));
         while( (cols[cc] < N) && 
                 !((free_vector >> cols[cc]) & 1) ){
             cols[cc]++;
@@ -94,7 +94,7 @@ int main(int argc, char ** argv){
             //set the new placement in the blockvectors
             tbh = 1 << cols[cc];
             tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << ((N - 1 - cols[cc]) + cc);
+            tbd = 1 << (cols[cc] + N - 1 - cc);
 
             bh += tbh;
             bu += tbu;
