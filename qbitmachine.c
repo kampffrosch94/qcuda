@@ -37,14 +37,7 @@ void print_field(int8_t * cols, int32_t N){
     printf("\n");
 }
 
-
-int main(int argc, char ** argv){
-    if(argc < 2){
-        printf("Not enough arguments\n");
-        return 1;
-    }
-    int32_t N = atoi(argv[1]);
-
+uint64_t count_combinations(int32_t N){
     int8_t * cols = calloc(N,sizeof(int8_t));
         //the field on which the queens are set, split in columns
     //int64_t bv = 0; //block vertical has to be preset
@@ -118,8 +111,14 @@ int main(int argc, char ** argv){
             }
         }
     }
+    return found_combinations;
+}
 
-    printf("\nFound Combinations: %" PRIu64 "\n", found_combinations);
-
-    return 0;
+int main(int argc, char ** argv){
+    if(argc < 2){
+        printf("Not enough arguments\n");
+        return 1;
+    }
+    int32_t N = atoi(argv[1]);
+    printf("\nFound Combinations: %" PRIu64 "\n", count_combinations(N));
 }
