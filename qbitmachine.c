@@ -111,6 +111,7 @@ uint64_t count_combinations(int32_t N){
             }
         }
     }
+    free(cols);
     return found_combinations;
 }
 
