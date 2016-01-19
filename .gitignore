@@ -33,3 +33,6 @@
 
 # Editor files
 *.swp
+
+#directories
+bin/*

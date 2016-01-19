@@ -7,6 +7,7 @@ SRC=qbitmachine.c
 PARAM=10
 
 $(EXE): $(SRC)
+	mkdir -p $(BIN)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 valgrind:
@@ -15,4 +16,7 @@ valgrind:
 run:
 	$(EXE) $(PARAM)
 
-.PHONY: valgrind run
+clean:
+	rm $(BIN)/*
+
+.PHONY: valgrind run clean
