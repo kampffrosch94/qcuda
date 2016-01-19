@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-std=c11 -Wall -O2 -march=native
 BIN=./bin
-EXE=$(BIN)/qbitmachine.c
+EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.c
 
 PARAM=10
