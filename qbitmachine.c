@@ -6,23 +6,10 @@
 
 #define VERBOSE 0
 
-const char *byte_to_binary(int x)
-{
-    static char b[8];
-    b[0] = '\0';
-
-    int z;
-    for (z = 64; z > 0; z >>= 1)
-    {
-        strcat(b, ((x & z) == z) ? "1" : "0");
-    }
-    return b;
-}
-
-void print_field(int8_t * cols, int32_t N){
+void print_field(uint64_t * cols, int32_t N){
     for(int row = 0; row < N; row++){
         for(int col = 0; col < N; col++){
-            if(N - cols[col] - 1 == row){
+            if(cols[col] == 1 << (N -1 -row)){
                 printf("X");
             } else {
                 printf("O");
@@ -30,10 +17,6 @@ void print_field(int8_t * cols, int32_t N){
         }
         printf("\n");
     }
-    for(int i = 0; i < N; i++){
-        printf("%"PRId8" , ",cols[i]);
-    }
-    //printf("\n--------------\n");
     printf("\n");
 }
 
@@ -103,7 +86,7 @@ uint64_t count_combinations(int32_t N){//3 < N < 64
 #if (VERBOSE > 0)
                 print_field(cols,N);
                 //printf("Free_vector: %s\n",byte_to_binary(free_vector));
-                printf("bd: %s\n",byte_to_binary(bd));
+                //printf("bd: %s\n",byte_to_binary(bd));
 #endif
             } else {
                 cc++;
