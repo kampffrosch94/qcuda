@@ -37,69 +37,68 @@ void print_field(int8_t * cols, int32_t N){
     printf("\n");
 }
 
-uint64_t count_combinations(int32_t N){
-    int8_t * cols = calloc(N,sizeof(int8_t));
-        //the field on which the queens are set, split in columns
-    //int64_t bv = 0; //block vertical has to be preset
-    int64_t bh = 0; //block horizontal
-                 //count from bottom to top
-    int64_t bu = 0; //element 0 on the lower left
-    int64_t bd = 0; //element 0 on the upper left
+uint64_t count_combinations(int32_t N){//3 < N < 64
+    uint64_t * cols = calloc(N,sizeof(int64_t));
+    //the field on which the queens are set, split in columns
+    //onehot coded for the row in which the queen is placed
+    //0 means unset
+    //int64_t bv = 0; //block vertical has to be preset TODO
+    uint64_t bh = 0; //block horizontal
+    //count from bottom to top
+    uint64_t bu = 0; //element 0 on the lower left
+    uint64_t bd = 0; //element 0 on the lower right
 
     //blockvectors for a new position
-    int64_t tbh; 
-    int64_t tbu; 
-    int64_t tbd; 
+    uint64_t tbh; 
+    uint64_t tbu; 
+    uint64_t tbd; 
 
-    int64_t free_vector; //has 1 in positions which are free in the
-                         //current col (opposite bh)
+    int64_t * free_vectors = malloc(N*sizeof(int64_t)); 
+    //has 1 in positions which are free in the
+    //current col (opposite to bh)
 
-    int32_t cc = 0; //current column
+    uint64_t relevant_bits = (1 << N) - 1;
+
+    uint32_t cc = 0; //current column
 
     uint64_t found_combinations = 0;
-    
-    for(int32_t i=0;i<N;i++){
-        cols[i] = -1; //this value means currently not set
-    }
+
+    free_vectors[0] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) & relevant_bits;
 
     while(1){
-        if(cols[cc] > -1){
+        if(cols[cc] > 0){
             //delete the old placement in the blockvectors (if any)
-            tbh = 1 << cols[cc];
-            tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << (cols[cc] + N - 1 - cc);
-            
+            tbh = cols[cc];
+            tbu = tbh << cc;
+            tbd = tbh << (N - 1 - cc);
+
             bh -= tbh;
             bu -= tbu;
             bd -= tbd;
         }
 
-        cols[cc]++;
 
-        //find the next new placement in the current col
-        free_vector = ~(bh | (bu >> cc) | (bd >> (N -1 - cc)));
-        while( (cols[cc] < N) && 
-                !((free_vector >> cols[cc]) & 1) ){
-            cols[cc]++;
-        } //postcondition: cols[cc] is at free position or equal to N
-
-        if(cols[cc] >= N){ //track back
+        if(free_vectors[cc] == 0){ //track back
             if(cc == 0){ //stop
                 break;
             }
-            cols[cc] = -1;
+            cols[cc] = 0;
             cc--;
         } else {
+            //find the next new placement in the current col
+            cols[cc] = free_vectors[cc] & -free_vectors[cc];
+            //remove it from the free_vector
+            free_vectors[cc] -= cols[cc];
             //set the new placement in the blockvectors
-            tbh = 1 << cols[cc];
-            tbu = 1 << (cols[cc] + cc);
-            tbd = 1 << (cols[cc] + N - 1 - cc);
+            tbh = cols[cc];
+            tbu = tbh << cc;
+            tbd = tbh << (N - 1 - cc);
 
             bh += tbh;
             bu += tbu;
             bd += tbd;
-            
-            if(cc == N - 1){
+
+            if(cc == N - 1){ 
                 found_combinations++;
 #if (VERBOSE > 0)
                 print_field(cols,N);
@@ -108,10 +107,13 @@ uint64_t count_combinations(int32_t N){
 #endif
             } else {
                 cc++;
+                free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
+                    & relevant_bits;
             }
         }
     }
     free(cols);
+    free(free_vectors);
     return found_combinations;
 }
 
