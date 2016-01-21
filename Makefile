@@ -1,10 +1,10 @@
 CC=gcc
-CFLAGS=-std=c11 -Wall -O2 -march=native
+CFLAGS=-std=c11 -Wall -march=native -g
 BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.c
 
-PARAM=10
+PARAM=./input/10.pre 10
 
 $(EXE): $(SRC)
 	mkdir -p $(BIN)
