@@ -1,30 +1,19 @@
+#define DEBUG 0
+#define WITHOUTPRESET 0
+#define _BSD_SOURCE 
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <endian.h>
 
-#define VERBOSE 0
 
 typedef struct {
     uint64_t m_spec;
     uint64_t m_sol;
 } preplacement;
-
-void print_field(uint64_t * cols, int32_t N){
-    for(int row = 0; row < N; row++){
-        for(int col = 0; col < N; col++){
-            if(cols[col] == 1 << (N -1 -row)){
-                printf("X");
-            } else {
-                printf("O");
-            }
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
 
 uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
         uint64_t bd,uint64_t bv){//3 < N < 64
@@ -51,16 +40,30 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
 
     uint64_t relevant_bits = (1 << N) - 1;
 
-    uint32_t cc = L; //current column
+    int32_t cc = L; //current column
 
     uint64_t found_combinations = 0;
 
-    free_vectors[L] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) & relevant_bits;
+    free_vectors[L] = (~(bh | (bu >> cc) | (bd >> (N -1 - cc)))) 
+        & relevant_bits;
+
+#if DEBUG > 1
+    if(free_vectors[L] == 0){
+        printf("Vorplatzierung nicht erweiterbar.\n");
+    }
+#endif
 
     while(1){
-        while(((bv >> cc)&1)&&(cc <= N - 1 - L)){
+        while(((bv >> cc)&1)&&(cc < N - 1 - L)){
             cc++;
+            free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
+                & relevant_bits;
         }
+
+        if(((bv >> cc)&1)&&(cc == N - 1 - L)){
+            found_combinations++;
+        }
+
         if(cols[cc] > 0){
             //delete the old placement in the blockvectors (if any)
             tbh = cols[cc];
@@ -73,13 +76,13 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
         }
 
         if(free_vectors[cc] == 0){ //track back
-            if(cc == L){ //stop
-                break;
-            }
             cols[cc] = 0;
             cc--;
             while(((bv >> cc)&1)&&(cc>=L)){
                 cc--;
+            }
+            if(cc < L){ //stop
+                break;
             }
         } else {
             //find the next new placement in the current col
@@ -97,11 +100,6 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
 
             if(cc == N - 1 - L){ 
                 found_combinations++;
-#if (VERBOSE > 0)
-                print_field(cols,N);
-                //printf("Free_vector: %s\n",byte_to_binary(free_vector));
-                //printf("bd: %s\n",byte_to_binary(bd));
-#endif
             } else {
                 cc++;
                 free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
@@ -121,25 +119,28 @@ void set_position(int32_t x,int32_t y, int32_t N,uint64_t * bh,
     uint64_t tbd = tbh << (N - 1 - x);
     uint64_t tbv = 1 << x;
 
-    *bh += tbh;
-    *bu += tbu;
-    *bd += tbd;
-    *bv += tbv;
+    *bh |= tbh;
+    *bu |= tbu;
+    *bd |= tbd;
+    *bv |= tbv;
+
+#if (DEBUG > 1)
+    printf("(%d,%d)\n",x,y);
+#endif
 }
 
-uint64_t evaluate_preplacement(int32_t N, preplacement pre){
+uint64_t evaluate_preplacement(int32_t N, uint64_t spec){
     uint8_t wa,wb,na,nb,ea,eb,sa,sb,sym;
-    uint64_t spec = pre.m_spec;
 
-    wa = spec >> 60;
-    wb = spec >> 55;
-    na = spec >> 50;
-    nb = spec >> 45;
-    ea = spec >> 40;
-    eb = spec >> 35;
-    sa = spec >> 30;
-    sb = spec >> 25;
-    sym = spec >> 23;
+    wa = (spec >> 60) & 0b1111; 
+    wb = (spec >> 55) & 0b11111;
+    na = (spec >> 50) & 0b11111;
+    nb = (spec >> 45) & 0b11111;
+    ea = (spec >> 40) & 0b11111;
+    eb = (spec >> 35) & 0b11111;
+    sa = (spec >> 30) & 0b11111;
+    sb = (spec >> 25) & 0b11111;
+    sym = (spec >> 23) & 0b11;
 
     uint64_t bh = 0;
     uint64_t bu = 0;
@@ -158,15 +159,24 @@ uint64_t evaluate_preplacement(int32_t N, preplacement pre){
     set_position(N-1-sa,0,N,&bh,&bu,&bd,&bv);
     set_position(N-1-sb,1,N,&bh,&bu,&bd,&bv);
 
-    if(sym == 3)//None
-        return count_combinations(N,2,bh,bu,bd,bv);
-    else if(sym == 2)//Point
-        return count_combinations(N,2,bh,bu,bd,bv)*2;
-    else if(sym == 1)//Symmetrie
-        return count_combinations(N,2,bh,bu,bd,bv)*4;
-    else 
-        return count_combinations(N,2,bh,bu,bd,bv);
-        //assert(0);
+    if(sym == 0)
+        assert(0);
+
+    int64_t result = count_combinations(N,2,bh,bu,bd,bv);
+
+#if (DEBUG > 0)
+    uint64_t relevant_bits = (1 << N) - 1;
+    int8_t cc = 2;
+    uint64_t free_vector = (~(bh | (bu >> cc) | (bd >> (N - 1 - cc)))) 
+        & relevant_bits;
+    uint64_t first_free = free_vector & -free_vector;
+    if(0 != result){
+        printf("First Free: %ld \n",first_free);
+        printf("Sym: %d Result: %ld\n------------------\n\n",sym,result);
+    }
+#endif
+
+    return result*(1 << sym); 
 }
 
 
@@ -177,8 +187,14 @@ int main(int argc, char ** argv){
         return 1;
     }
 
-    FILE * fp = fopen(argv[1],"rb");
     int32_t N = atoi(argv[2]);
+#if WITHOUTPRESET > 0
+    int64_t result = count_combinations(N,0,0,0,0,0);
+    printf("\nN=%d Without presets: %ld\n",N,result);
+#endif
+
+#if WITHOUTPRESET == 0
+    FILE * fp = fopen(argv[1],"rb");
     fseek(fp, 0L, SEEK_END);
     long sz = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
@@ -189,7 +205,7 @@ int main(int argc, char ** argv){
     }
     int32_t count = sz / 16;
 
-    printf("\nSize: %ld Count: %d \n",sz,count);
+    printf("\nPresets: Size: %ld Count: %d \n\n",sz,count);
 
     preplacement * pre = malloc(sz);
     int rr;
@@ -200,7 +216,11 @@ int main(int argc, char ** argv){
 
     uint64_t found_combinations = 0;
     for(int i=0;i<count;i++){
-        found_combinations += evaluate_preplacement(N, pre[i]);
+#if DEBUG > 1
+        printf("\n%d\n",i+1);
+#endif
+        found_combinations += evaluate_preplacement(N, be64toh(pre[i].m_spec));
     }
-    //printf("\nFound Combinations: %" PRIu64 "\n", count_combinations(N));
+    printf("\nFound Combinations: %" PRIu64 "\n", found_combinations);
+#endif
 }
