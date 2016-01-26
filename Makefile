@@ -1,8 +1,8 @@
-CC=gcc
-CFLAGS=-std=c11 -Wall -march=native -O2 #-pg
+CC=nvcc
+CFLAGS=#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
 BIN=./bin
 EXE=$(BIN)/qbitmachine
-SRC=qbitmachine.c
+SRC=qbitmachine.cu
 
 N=15
 PARAM=./input/$(N).pre $(N)
