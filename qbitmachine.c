@@ -30,11 +30,6 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
     int64_t * free_vectors;
     //has 1 in positions which are free in the
     //current col (opposite to bh)
-    
-    //blockvectors for a new position
-    uint64_t tbh; 
-    uint64_t tbu; 
-    uint64_t tbd; 
 
     uint64_t relevant_bits = (1 << N) - 1;
 
@@ -83,13 +78,9 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
 
         if(cols[cc] > 0){
             //delete the old placement in the blockvectors (if any)
-            tbh = cols[cc];
-            tbu = tbh << cc;
-            tbd = tbh << (N - 1 - cc);
-
-            bh -= tbh;
-            bu -= tbu;
-            bd -= tbd;
+            bh ^= cols[cc];
+            bu ^= cols[cc] << cc;
+            bd ^= cols[cc] << (N - 1 - cc);
         }
 
         if(free_vectors[cc] == 0){ //track back
@@ -105,15 +96,11 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
             //find the next new placement in the current col
             cols[cc] = free_vectors[cc] & -free_vectors[cc];
             //remove it from the free_vector
-            free_vectors[cc] -= cols[cc];
+            free_vectors[cc] ^= cols[cc];
             //set the new placement in the blockvectors
-            tbh = cols[cc];
-            tbu = tbh << cc;
-            tbd = tbh << (N - 1 - cc);
-
-            bh += tbh;
-            bu += tbu;
-            bd += tbd;
+            bh ^= cols[cc];
+            bu ^= cols[cc] << cc;
+            bd ^= cols[cc] << (N - 1 - cc);
 
             if(cc == end){ 
                 found_combinations++;
