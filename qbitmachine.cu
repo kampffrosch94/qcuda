@@ -27,7 +27,7 @@ typedef struct {
     uint64_t m_sol;
 } preplacement;
 
-__global__ void count_combinations(const cuda_pre * pre,const uint32_t pre_count){//3 < N < 64
+__global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 < N < 64
 
     int idx=blockIdx.x*blockDim.x+threadIdx.x;
     if(!(idx >= pre_count)){
@@ -63,56 +63,45 @@ __global__ void count_combinations(const cuda_pre * pre,const uint32_t pre_count
 
 
         int32_t cc = start; //current column
-
+    
         free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
             & relevant_bits;
 
-        free_vectors = &free_vectors[cc];
-        cols = &cols[cc];
-
         while(1){
-            if(*cols > 0){
+            if(cols[cc] > 0){
                 //delete the old placement in the blockvectors (if any)
-                bh ^= *cols;
-                bu ^= *cols << cc;
-                bd ^= *cols << (N - 1 - cc);
+                bh ^= cols[cc];
+                bu ^= cols[cc] << cc;
+                bd ^= cols[cc] << (N - 1 - cc);
             }
 
-            if(*free_vectors == 0){ //track back
+            if(free_vectors[cc] == 0){ //track back
                 if(cc == start){ //stop
                     break;
                 }
-                *cols = 0;
+                cols[cc] = 0;
                 cc--;
-                cols--;
-                free_vectors--;
                 while(((bv >> cc)&1)){
                     cc--;
-                    cols--;
-                    free_vectors--;
                 }
             } else {
                 //find the next new placement in the current col
-                *cols = *free_vectors & - *free_vectors;
+                cols[cc] = free_vectors[cc] & -free_vectors[cc];
                 //remove it from the free_vector
-                *free_vectors ^= *cols;
+                free_vectors[cc] ^= cols[cc];
                 //set the new placement in the blockvectors
-                bh ^= *cols;
-                bu ^= *cols << cc;
-                bd ^= *cols << (N - 1 - cc);
+                bh ^= cols[cc];
+                bu ^= cols[cc] << cc;
+                bd ^= cols[cc] << (N - 1 - cc);
 
                 if(cc == end){ 
                     found_combinations++;
                 } else {
                     cc++;
-                    cols++;
-                    free_vectors++;
                     while(((bv >> cc)&1)){
                         cc++;
-                        cols++;
-                        free_vectors++;
                     }
-                    *free_vectors = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
+                    free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
                         & relevant_bits;
                 }
             }
@@ -203,7 +192,7 @@ int main(int argc, char ** argv){
 
     printf("\nPresets: Size: %ld Count: %d \n\n",sz,preplacement_count);
 
-    preplacement * rawpre = malloc(sz);
+    preplacement * rawpre = (preplacement *) malloc(sz);
     int rr;
     if((rr = fread(rawpre,sizeof(preplacement),preplacement_count,fp)) != preplacement_count){
         printf("Read failed. Read: %d Should be:%d\n",rr,preplacement_count);
@@ -221,7 +210,7 @@ int main(int argc, char ** argv){
     //device_prop.maxThreadsDim[0],device_prop.maxThreadsDim[1],device_prop.maxThreadsDim[2], 
     //device_prop.maxGridSize[0],device_prop.maxGridSize[1],device_prop.maxGridSize[2] 
 
-    cuda_pre * pre_host = malloc(preplacement_count * sizeof(cuda_pre));
+    cuda_pre * pre_host = (cuda_pre *) malloc(preplacement_count * sizeof(cuda_pre));
     cuda_pre * pre_device;
     
     for(uint32_t i=0;i<preplacement_count;i++){
@@ -240,10 +229,10 @@ int main(int argc, char ** argv){
     
     CUDA_CHECK(cudaMemcpy(pre_host,pre_device,preplacement_count * sizeof(cuda_pre),cudaMemcpyDeviceToHost));
 
-    CUDA_CHECK(cudaFree(preset_device));
+    CUDA_CHECK(cudaFree(pre_device));
     //end of cuda
     uint64_t found_combinations = 0;
-    for(uint32_t i; i < preplacement_count; i++){
+    for(uint32_t i=0; i < preplacement_count; i++){
         found_combinations += pre_host[i].result;
     }
     printf("\nFound Combinations: %" PRIu64 "\n", found_combinations);
