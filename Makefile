@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c11 -Wall -march=native -O0 -pg
+CFLAGS=-std=c11 -Wall -march=native -O2 #-pg
 BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.c

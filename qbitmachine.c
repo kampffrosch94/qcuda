@@ -1,4 +1,4 @@
-#define DEBUG 0
+//#define DEBUG 0
 #define WITHOUTPRESET 0
 #define _BSD_SOURCE 
 #include <stdlib.h>
@@ -70,52 +70,63 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
     free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
         & relevant_bits;
 
+    free_vectors = &free_vectors[cc];
+    cols = &cols[cc];
+
     while(1){
 #ifdef DEBUG
         if((cc<start)||(cc > end))
             printf("cc out of bounds\n");
 #endif
 
-        if(cols[cc] > 0){
+        if(*cols > 0){
             //delete the old placement in the blockvectors (if any)
-            bh ^= cols[cc];
-            bu ^= cols[cc] << cc;
-            bd ^= cols[cc] << (N - 1 - cc);
+            bh ^= *cols;
+            bu ^= *cols << cc;
+            bd ^= *cols << (N - 1 - cc);
         }
 
-        if(free_vectors[cc] == 0){ //track back
+        if(*free_vectors == 0){ //track back
             if(cc == start){ //stop
                 break;
             }
-            cols[cc] = 0;
+            *cols = 0;
             cc--;
+            cols--;
+            free_vectors--;
             while(((bv >> cc)&1)){
                 cc--;
+                cols--;
+                free_vectors--;
             }
         } else {
             //find the next new placement in the current col
-            cols[cc] = free_vectors[cc] & -free_vectors[cc];
+            *cols = *free_vectors & - *free_vectors;
             //remove it from the free_vector
-            free_vectors[cc] ^= cols[cc];
+            *free_vectors ^= *cols;
             //set the new placement in the blockvectors
-            bh ^= cols[cc];
-            bu ^= cols[cc] << cc;
-            bd ^= cols[cc] << (N - 1 - cc);
+            bh ^= *cols;
+            bu ^= *cols << cc;
+            bd ^= *cols << (N - 1 - cc);
 
             if(cc == end){ 
                 found_combinations++;
             } else {
                 cc++;
+                cols++;
+                free_vectors++;
                 while(((bv >> cc)&1)){
                     cc++;
+                    cols++;
+                    free_vectors++;
                 }
-                free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
+                *free_vectors = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
                     & relevant_bits;
             }
         }
     }
-    free(cols);
-    free(free_vectors);
+    free(cols - cc);
+    free(free_vectors - cc);
     return found_combinations;
 }
 
