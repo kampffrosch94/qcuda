@@ -4,8 +4,8 @@ BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.c
 
-PARAM=./input/15.pre 15
-#PARAM=./input/10.pre 10
+N=15
+PARAM=./input/$(N).pre $(N)
 
 $(EXE): $(SRC)
 	mkdir -p $(BIN)
