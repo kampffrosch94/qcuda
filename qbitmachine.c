@@ -18,51 +18,68 @@ typedef struct {
 uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
         uint64_t bd,uint64_t bv){//3 < N < 64
 
-    uint64_t * cols = calloc(N,sizeof(int64_t));
-    //the field on which the queens are set, split in columns
-    //onehot coded for the row in which the queen is placed
-    //0 means unset
-
-    //int64_t bv = 0; //block vertical has to be preset
-    //uint64_t bh = 0; //block horizontal
-    //count from bottom to top
+    //uint64_t bv = 0; //block vertical has to be preset
+    //uint64_t bh = 0; //block horizontal; count from bottom to top
     //uint64_t bu = 0; //element 0 on the lower left
     //uint64_t bd = 0; //element 0 on the lower right
 
+    uint64_t * cols;
+    //the field on which the queens are set, split in columns
+    //onehot coded for the row in which the queen is placed
+    //0 means unset
+    int64_t * free_vectors;
+    //has 1 in positions which are free in the
+    //current col (opposite to bh)
+    
     //blockvectors for a new position
     uint64_t tbh; 
     uint64_t tbu; 
     uint64_t tbd; 
 
-    int64_t * free_vectors = calloc(N,sizeof(int64_t)); 
-    //has 1 in positions which are free in the
-    //current col (opposite to bh)
-
     uint64_t relevant_bits = (1 << N) - 1;
-
-    int32_t cc = L; //current column
 
     uint64_t found_combinations = 0;
 
-    free_vectors[L] = (~(bh | (bu >> cc) | (bd >> (N -1 - cc)))) 
-        & relevant_bits;
+    int32_t start = L;
+    int32_t end = N - 1 - L;
 
-#if DEBUG > 1
-    if(free_vectors[L] == 0){
-        printf("Vorplatzierung nicht erweiterbar.\n");
+    while(((bv >> start)&1)&&(start < end)){
+        start++;
     }
+
+    while(((bv >> end)&1)&&(end > start)){
+        end--;
+    }
+
+#ifdef DEBUG
+#if DEBUG > 0
+    if(start != L)
+        printf("start changed.\n");
+    if(end != N-1-L)
+        printf("end changed.\n");
+#endif
+    if(start < L)
+        printf("start is too small.\n");
+    if(end >= N)
+        printf("end is too big.\n");
+    if((start > end) || (end < start))
+        printf("WTH!\n");
+    fflush(stdout);
 #endif
 
-    while(1){
-        while(((bv >> cc)&1)&&(cc < N - 1 - L)){
-            cc++;
-            free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
-                & relevant_bits;
-        }
+    cols = calloc(N,sizeof(int64_t));
+    free_vectors = calloc(N,sizeof(int64_t)); 
+    
+    int32_t cc = start; //current column
+    
+    free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
+        & relevant_bits;
 
-        if(((bv >> cc)&1)&&(cc == N - 1 - L)){
-            found_combinations++;
-        }
+    while(1){
+#ifdef DEBUG
+        if((cc<start)||(cc > end))
+            printf("cc out of bounds\n");
+#endif
 
         if(cols[cc] > 0){
             //delete the old placement in the blockvectors (if any)
@@ -76,13 +93,13 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
         }
 
         if(free_vectors[cc] == 0){ //track back
+            if(cc == start){ //stop
+                break;
+            }
             cols[cc] = 0;
             cc--;
-            while(((bv >> cc)&1)&&(cc>=L)){
+            while(((bv >> cc)&1)){
                 cc--;
-            }
-            if(cc < L){ //stop
-                break;
             }
         } else {
             //find the next new placement in the current col
@@ -98,11 +115,14 @@ uint64_t count_combinations(int32_t N,int32_t L,uint64_t bh,uint64_t bu,
             bu += tbu;
             bd += tbd;
 
-            if(cc == N - 1 - L){ 
+            if(cc == end){ 
                 found_combinations++;
             } else {
                 cc++;
-                free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
+                while(((bv >> cc)&1)){
+                    cc++;
+                }
+                free_vectors[cc] = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
                     & relevant_bits;
             }
         }
