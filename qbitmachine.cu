@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <endian.h>
-#include <math.h>
 
 #define CUDA_CHECK(cmd) {cudaError_t error = cmd; if(error!=cudaSuccess){printf("<%s>:%i ",__FILE__,__LINE__); printf("[CUDA] Error: %s\n", cudaGetErrorString(error));}}
 #define CUDA_CHECK_KERNEL {cudaError_t error = cudaGetLastError(); if(error!=cudaSuccess){printf("<%s>:%i ",__FILE__,__LINE__); printf("[CUDA] Error: %s\n", cudaGetErrorString(error));}}
@@ -30,7 +29,7 @@ typedef struct {
 __global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 < N < 64
 
     int idx=blockIdx.x*blockDim.x+threadIdx.x;
-    if(!(idx >= pre_count)){
+    if(idx < pre_count){
         const uint32_t N = Ndef;
         const uint32_t L = Ldef;
         uint64_t bv = pre[idx].bv; //block vertical has to be preset
@@ -166,6 +165,7 @@ cuda_pre evaluate_preplacement(int32_t N, uint64_t spec){
     pre.bd = bd;
     pre.bv = bv;
     pre.sym = sym;
+    pre.result = 0; //TODO this should be not necessary
     
     return pre; 
 }
@@ -198,6 +198,7 @@ int main(int argc, char ** argv){
         printf("Read failed. Read: %d Should be:%d\n",rr,preplacement_count);
         abort();
     }
+    fclose(fp);
 
     //start of cuda related stuff
     //CUDA_CHECK(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1););
@@ -216,6 +217,7 @@ int main(int argc, char ** argv){
     for(uint32_t i=0;i<preplacement_count;i++){
         pre_host[i] = evaluate_preplacement(Ndef, be64toh(rawpre[i].m_spec));
     }
+    free(rawpre);
     CUDA_CHECK(cudaMalloc((void**)&pre_device,preplacement_count * sizeof(cuda_pre)));
     
     CUDA_CHECK(cudaMemcpy(pre_device,pre_host,preplacement_count * sizeof(cuda_pre),cudaMemcpyHostToDevice));
@@ -223,7 +225,8 @@ int main(int argc, char ** argv){
     
     uint32_t dimGrid, dimBlock;
     dimBlock = 128;
-    dimGrid  = ceil(preplacement_count / dimBlock);
+    dimGrid  = (int)(preplacement_count / dimBlock);
+    dimGrid  = (preplacement_count % dimBlock > 0) ? dimGrid+1 : dimGrid; 
     count_combinations<<<dimGrid,dimBlock>>>(pre_device,preplacement_count);
     CUDA_CHECK_KERNEL
     
@@ -233,7 +236,8 @@ int main(int argc, char ** argv){
     //end of cuda
     uint64_t found_combinations = 0;
     for(uint32_t i=0; i < preplacement_count; i++){
-        found_combinations += pre_host[i].result;
+        found_combinations += pre_host[i].result * (1 << pre_host[i].sym);
     }
     printf("\nFound Combinations: %" PRIu64 "\n", found_combinations);
+    free(pre_host);
 }
