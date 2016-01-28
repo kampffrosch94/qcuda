@@ -1,6 +1,7 @@
-#define _BSD_SOURCE 
-#define Ndef 15
+//#define _BSD_SOURCE 
+#define Ndef 16
 #define Ldef 2
+#define Blocksizedef 1024
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -224,7 +225,7 @@ int main(int argc, char ** argv){
     
     
     uint32_t dimGrid, dimBlock;
-    dimBlock = 128;
+    dimBlock = Blocksizedef;
     dimGrid  = (int)(preplacement_count / dimBlock);
     dimGrid  = (preplacement_count % dimBlock > 0) ? dimGrid+1 : dimGrid; 
     count_combinations<<<dimGrid,dimBlock>>>(pre_device,preplacement_count);
@@ -238,6 +239,6 @@ int main(int argc, char ** argv){
     for(uint32_t i=0; i < preplacement_count; i++){
         found_combinations += pre_host[i].result * (1 << pre_host[i].sym);
     }
-    printf("\nFound Combinations: %" PRIu64 "\n", found_combinations);
+    printf("\nFound Combinations: %ld \n", found_combinations);
     free(pre_host);
 }

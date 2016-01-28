@@ -1,10 +1,10 @@
+N=16
 CC=nvcc
-CFLAGS=#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
+CFLAGS=-O3 #-D "Ndef ${N}"#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
 BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.cu
 
-N=15
 PARAM=./input/$(N).pre $(N)
 
 $(EXE): $(SRC)
