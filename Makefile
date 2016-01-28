@@ -1,4 +1,4 @@
-N=16
+N=17
 CC=nvcc
 CFLAGS=-O3 #-D "Ndef ${N}"#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
 BIN=./bin
