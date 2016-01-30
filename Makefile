@@ -1,6 +1,6 @@
-N=17
+N=18
 CC=nvcc
-CFLAGS=-O3 #-D "Ndef ${N}"#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
+CFLAGS=-O3 -arch=compute_30 #-D "Ndef ${N}"#--compiler-options "-std=c11 -Wall -march=native -O2" #-pg
 BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.cu

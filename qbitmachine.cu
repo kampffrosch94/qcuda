@@ -1,5 +1,5 @@
 //#define _BSD_SOURCE 
-#define Ndef 17
+#define Ndef 18
 #define Ldef 2
 #define Blocksizedef 128
 #include <stdlib.h>
@@ -217,10 +217,21 @@ int main(int argc, char ** argv){
     
     cudaDeviceProp device_prop;
     cudaGetDeviceProperties(&device_prop,0);
-    //device_prop.maxThreadsPerBlock, 
-    //device_prop.sharedMemPerBlock, 
-    //device_prop.maxThreadsDim[0],device_prop.maxThreadsDim[1],device_prop.maxThreadsDim[2], 
-    //device_prop.maxGridSize[0],device_prop.maxGridSize[1],device_prop.maxGridSize[2] 
+    printf("\n \
+            -----Geräteinfo-----\n \
+            Name              : %s\n \
+            WarpSize          : %d\n \
+            MaxThreadsPerBlock: %d\n \
+            sharedMemPerBlock : %ld\n \
+            MaxThreadsDim     : (%d , %d , %d)\n \
+            MaxGridSize       : (%d , %d , %d)\n ",
+            device_prop.name,
+            device_prop.warpSize,
+            device_prop.maxThreadsPerBlock,
+            device_prop.sharedMemPerBlock,
+            device_prop.maxThreadsDim[0],device_prop.maxThreadsDim[1],device_prop.maxThreadsDim[2],
+            device_prop.maxGridSize[0],device_prop.maxGridSize[1],device_prop.maxGridSize[2]
+            );
 
     cuda_pre * pre_host = (cuda_pre *) malloc(preplacement_count * sizeof(cuda_pre));
     cuda_pre * pre_device;
