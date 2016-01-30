@@ -1,5 +1,5 @@
 //#define _BSD_SOURCE 
-#define Ndef 18
+#define Ndef 17
 #define Ldef 2
 #define Blocksizedef 128
 #include <stdlib.h>
@@ -249,6 +249,12 @@ int main(int argc, char ** argv){
     dimBlock = Blocksizedef;
     dimGrid  = (int)(preplacement_count / dimBlock);
     dimGrid  = (preplacement_count % dimBlock > 0) ? dimGrid+1 : dimGrid; 
+
+    if(dimGrid > device_prop.maxGridSize[0]){
+        printf("\nGridsize %d is too big.\n",dimGrid);
+        fflush(stdout);
+        abort();
+    }
 
     count_combinations<<<dimGrid,dimBlock>>>(pre_device,preplacement_count);
     CUDA_CHECK_KERNEL
