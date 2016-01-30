@@ -186,6 +186,11 @@ int main(int argc, char ** argv){
 
     //int32_t N = atoi(argv[2]);
     FILE * fp = fopen(argv[1],"rb");
+    if(fp == NULL){
+        printf("\nCan not open file: %s\n",argv[1]);
+        fflush(stdout);
+        abort();
+    }
     fseek(fp, 0L, SEEK_END);
     long sz = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
