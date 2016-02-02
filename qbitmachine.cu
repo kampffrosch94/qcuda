@@ -1,7 +1,7 @@
 //#define _BSD_SOURCE 
-#define Ndef 17
+#define Ndef 27
 #define Ldef 2
-#define Blocksizedef 128
+#define Blocksizedef 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -219,14 +219,16 @@ int main(int argc, char ** argv){
     cudaGetDeviceProperties(&device_prop,0);
     printf("\n \
             -----Geräteinfo-----\n \
-            Name              : %s\n \
-            WarpSize          : %d\n \
-            MaxThreadsPerBlock: %d\n \
-            sharedMemPerBlock : %ld\n \
-            MaxThreadsDim     : (%d , %d , %d)\n \
-            MaxGridSize       : (%d , %d , %d)\n ",
+            Name                : %s\n \
+            WarpSize            : %d\n \
+            MultiProcessorCount : %d\n \
+            MaxThreadsPerBlock  : %d\n \
+            sharedMemPerBlock   : %ld\n \
+            MaxThreadsDim       : (%d , %d , %d)\n \
+            MaxGridSize         : (%d , %d , %d)\n ",
             device_prop.name,
             device_prop.warpSize,
+            device_prop.multiProcessorCount,
             device_prop.maxThreadsPerBlock,
             device_prop.sharedMemPerBlock,
             device_prop.maxThreadsDim[0],device_prop.maxThreadsDim[1],device_prop.maxThreadsDim[2],
@@ -249,6 +251,7 @@ int main(int argc, char ** argv){
     dimBlock = Blocksizedef;
     dimGrid  = (int)(preplacement_count / dimBlock);
     dimGrid  = (preplacement_count % dimBlock > 0) ? dimGrid+1 : dimGrid; 
+    dimGrid  = 13;
 
     if(dimGrid > device_prop.maxGridSize[0]){
         printf("\nGridsize %d is too big.\n",dimGrid);
@@ -256,10 +259,13 @@ int main(int argc, char ** argv){
         abort();
     }
 
+    printf("\nKernel start.N=%d blocksize=%d gridsize=%d\n",
+        Ndef,dimBlock,dimGrid);
     count_combinations<<<dimGrid,dimBlock>>>(pre_device,preplacement_count);
     CUDA_CHECK_KERNEL
     
     CUDA_CHECK(cudaMemcpy(pre_host,pre_device,preplacement_count * sizeof(cuda_pre),cudaMemcpyDeviceToHost));
+    printf("\nKernel end.\n");
 
     CUDA_CHECK(cudaFree(pre_device));
     //end of cuda
