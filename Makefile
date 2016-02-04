@@ -1,6 +1,6 @@
 N=27
 CC=nvcc
-CFLAGS=-O3 -arch=compute_37 -code=sm_37
+CFLAGS=-O3 -arch=compute_35 -code=sm_35
 BIN=./bin
 EXE=$(BIN)/qbitmachine
 SRC=qbitmachine.cu

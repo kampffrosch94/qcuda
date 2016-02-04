@@ -220,6 +220,7 @@ int main(int argc, char ** argv){
     printf("\n \
             -----Geräteinfo-----\n \
             Name                : %s\n \
+            Cudaversion         : %d.%d  \n \
             WarpSize            : %d\n \
             MultiProcessorCount : %d\n \
             MaxThreadsPerBlock  : %d\n \
@@ -227,6 +228,7 @@ int main(int argc, char ** argv){
             MaxThreadsDim       : (%d , %d , %d)\n \
             MaxGridSize         : (%d , %d , %d)\n ",
             device_prop.name,
+            device_prop.major, device_prop.minor,
             device_prop.warpSize,
             device_prop.multiProcessorCount,
             device_prop.maxThreadsPerBlock,
