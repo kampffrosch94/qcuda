@@ -30,6 +30,7 @@ typedef struct {
 __global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 < N < 64
 
     int id=blockIdx.x*blockDim.x+threadIdx.x;
+    int idx = threadIdx.x;
     if(id < pre_count){
         const uint32_t N = Ndef;
         const uint32_t L = Ldef;
@@ -38,17 +39,16 @@ __global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 
         uint64_t bu = pre[id].bu; //element 0 on the lower left
         uint64_t bd = pre[id].bd; //element 0 on the lower right
 
-        __shared__ uint64_t cols[Blocksizedef * Ndef];
+        __shared__ uint64_t cols[Blocksizedef][N];
         //the field on which the queens are set, split in columns
         //onehot coded for the row in which the queen is placed
         //0 means unset
-        __shared__ int64_t free_vectors[Blocksizedef * Ndef];
+        __shared__ int64_t free_vectors[Blocksizedef][N];
         //has 1 in positions which are free in the
         //current col (opposite to bh)
-        int idxoffset = threadIdx.x * Ndef;
         for(int32_t i = 0; i < N; i++){
-            cols[idxoffset + i] = 0;
-            free_vectors[idxoffset + i] = 0;
+            cols[idx][i] = 0;
+            free_vectors[idx][i] = 0;
         }
 
         uint64_t relevant_bits = (1 << N) - 1;
@@ -69,35 +69,35 @@ __global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 
 
         int32_t cc = start; //current column
     
-        free_vectors[idxoffset + cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
+        free_vectors[idx][cc] = ~(bh | (bu >> cc) | (bd >> (N -1 - cc))) 
             & relevant_bits;
 
         while(1){
-            if(cols[idxoffset + cc] > 0){
+            if(cols[idx][cc] > 0){
                 //delete the old placement in the blockvectors (if any)
-                bh ^= cols[idxoffset + cc];
-                bu ^= cols[idxoffset + cc] << cc;
-                bd ^= cols[idxoffset + cc] << (N - 1 - cc);
+                bh ^= cols[idx][cc];
+                bu ^= cols[idx][cc] << cc;
+                bd ^= cols[idx][cc] << (N - 1 - cc);
             }
 
-            if(free_vectors[idxoffset + cc] == 0){ //track back
+            if(free_vectors[idx][cc] == 0){ //track back
                 if(cc == start){ //stop
                     break;
                 }
-                cols[idxoffset + cc] = 0;
+                cols[idx][cc] = 0;
                 cc--;
                 while(((bv >> cc)&1)){
                     cc--;
                 }
             } else {
                 //find the next new placement in the current col
-                cols[idxoffset + cc] = free_vectors[idxoffset + cc] & -free_vectors[idxoffset + cc];
+                cols[idx][cc] = free_vectors[idx][cc] & -free_vectors[idx][cc];
                 //remove it from the free_vector
-                free_vectors[idxoffset + cc] ^= cols[idxoffset + cc];
+                free_vectors[idx][cc] ^= cols[idx][cc];
                 //set the new placement in the blockvectors
-                bh ^= cols[idxoffset + cc];
-                bu ^= cols[idxoffset + cc] << cc;
-                bd ^= cols[idxoffset + cc] << (N - 1 - cc);
+                bh ^= cols[idx][cc];
+                bu ^= cols[idx][cc] << cc;
+                bd ^= cols[idx][cc] << (N - 1 - cc);
 
                 if(cc == end){ 
                     found_combinations++;
@@ -106,7 +106,7 @@ __global__ void count_combinations(cuda_pre * pre,const uint32_t pre_count){//3 
                     while(((bv >> cc)&1)){
                         cc++;
                     }
-                    free_vectors[idxoffset + cc] = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
+                    free_vectors[idx][cc] = ~(bh | (bu >> cc) | (bd >> (N - 1 - cc))) 
                         & relevant_bits;
                 }
             }
